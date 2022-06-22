@@ -18,9 +18,8 @@ class RandomPlayer(Player):
         self.field = [[i, j] for i in range(Player.FIELD_SIZE)
                       for j in range(Player.FIELD_SIZE)]
 
-        # 初期配置を非復元抽出でランダムに決める．
-        ps = random.sample(self.field, 3)
-        positions = {'w': ps[0], 'c': ps[1], 's': ps[2]}
+        # 初期配置は広い範囲を攻撃できる場所に変更する。
+        positions = {'w': [1,1], 'c': [3,2], 's': [1,3]}
         super().__init__(positions)
 
     #
