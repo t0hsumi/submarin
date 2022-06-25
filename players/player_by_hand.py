@@ -9,7 +9,7 @@ sys.path.append(os.getcwd())
 from lib.player_base import Player, PlayerShip
 
 
-class RandomPlayer(Player):
+class PlayerByHand(Player):
 
     def __init__(self, seed=0):
         random.seed(seed)
@@ -53,7 +53,7 @@ def main(host, port, seed=0):
         with sock.makefile(mode='rw', buffering=1) as sockfile:
             get_msg = sockfile.readline()
             print(get_msg)
-            player = RandomPlayer()
+            player = PlayerByHand()
             sockfile.write(player.initial_condition()+'\n')
 
             while True:
