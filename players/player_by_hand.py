@@ -20,9 +20,21 @@ class PlayerByHand(Player):
 
         # 初期配置は広い範囲を攻撃できる場所に変更する。
         positions = {'w': [1,1], 'c': [3,2], 's': [1,3]}
+        self.enemy_positions = {'w':[], 'c':[], 's':[]}
+        self.have_attacked = False
         super().__init__(positions)
 
     def update(self, json_):
+        cond = json.loads(json_)
+
+        # 自分の攻撃のフィードバック
+        if self.have_attacked:
+            print("I have attacked enemy. the result are below.")
+            self.have_attacked = False
+        # 敵の行動のフィードバック
+        elif 'result' in cond:
+            if 'attacked' in cond['result']:
+                print("I was attacked by enemy")
         super().update(json_)
     #
     # 移動か攻撃かランダムに決める．
@@ -40,6 +52,7 @@ class PlayerByHand(Player):
             return json.dumps(self.move(ship.type, to))
         elif act == "attack":
             to = random.choice(self.field)
+            self.have_attacked = True
             while not self.can_attack(to):
                 to = random.choice(self.field)
 
