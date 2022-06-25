@@ -59,16 +59,16 @@ class PlayerByHand(Player):
                         update_position.append(point)
                 self.enemy_positions[enemy] = update_position
 
-    # # 敵からの攻撃による敵位置の更新
-    # def enemy_attack_update(self, attack_point):
-    #     possible_point = [[attack_point[0]+i, attack_point[1]+j]
-    #             for i in range(-1, 2) for j in range(-1, 2) if not (i==0 and j==0)]
-    #     for enemy in ['w', 'c', 's']:
-    #         update_position = []
-    #         for point in possible_point:
-    #             if point in self.enemy_positions[enemy]:
-    #                 update_position.append(point)
-    #         self.enemy_positions[enemy] = update_position
+    # 敵からの攻撃による敵位置の更新
+    def enemy_attack_update(self, attack_point):
+        possible_point = [[attack_point[0]+i, attack_point[1]+j]
+                            for i in range(-1, 2) for j in range(-1, 2)]
+        for enemy in ['w', 'c', 's']:
+            update_position = []
+            for point in self.enemy_positions[enemy]:
+                if point in possible_point:
+                    update_position.append(point)
+            update_position += self.enemy_positions[enemy]
 
     # 敵が移動した場合
     # 元々考えられていた候補の中を更新し、あり得ないものを除外する
@@ -81,6 +81,7 @@ class PlayerByHand(Player):
                 update_position.append(move_to)
         self.enemy_positions[move_enemy] = update_position
 
+    # json形式で与えられたfeedbackを反映する
     def update(self, json_):
         cond = json.loads(json_)
 
@@ -98,12 +99,10 @@ class PlayerByHand(Player):
         # 敵の行動のフィードバック
         elif 'result' in cond:
             if 'attacked' in cond['result']:
-                # self.enemy_attack_update(cond['result']['attacked']['position'])
-                print("I was attacked")
+                self.enemy_attack_update(cond['result']['attacked']['position'])
             if 'moved' in cond['result']:
                 self.enemy_movement_update(cond['result']['moved']['ship'],
                                            cond['result']['moved']['distance'])
-        print(cond)
         super().update(json_)
 
     #
@@ -115,11 +114,20 @@ class PlayerByHand(Player):
         for key, value in possibilities:
             if self.enemy_hp[key]==0:
                 continue
-            to = random.choice(self.enemy_positions[key])
-            while not self.can_attack(to):
+            can_attacked = False
+            for point in self.enemy_positions[key]:
+                if point not in [[x, y] for x in [3,4] for y in [0, 4]]:
+                    can_attacked = True
+            if can_attacked:
                 to = random.choice(self.enemy_positions[key])
-            self.have_attacked = True
-            return json.dumps(self.attack(to))
+                while not self.can_attack(to):
+                    to = random.choice(self.enemy_positions[key])
+                self.have_attacked = True
+                return json.dumps(self.attack(to))
+        to = random.choice(self.field)
+        while not self.can_attac(to):
+            to = random.choice(self.field)
+        return json.dumps(self.attack(to))
 
 # 仕様に従ってサーバとソケット通信を行う．
 def main(host, port, seed=0):
