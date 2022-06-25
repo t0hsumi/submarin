@@ -22,6 +22,8 @@ class PlayerByHand(Player):
         positions = {'w': [1,1], 'c': [3,2], 's': [1,3]}
         super().__init__(positions)
 
+    def update(self, json_):
+        super().update(json_)
     #
     # 移動か攻撃かランダムに決める．
     # どれがどこへ移動するか，あるいはどこに攻撃するかもランダム．
