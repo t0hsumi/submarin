@@ -20,9 +20,26 @@ class PlayerByHand(Player):
 
         # 初期配置は広い範囲を攻撃できる場所に変更する。
         positions = {'w': [1,1], 'c': [3,2], 's': [1,3]}
-        self.enemy_positions = {'w':[], 'c':[], 's':[]}
+        self.enemy_positions = {'w':[[i, j] for i in range(Player.FIELD_SIZE)
+                                     for j in range(Player.FIELD_SIZE)],
+                                'c':[[i, j] for i in range(Player.FIELD_SIZE)
+                                     for j in range(Player.FIELD_SIZE)],
+                                's':[[i, j] for i in range(Player.FIELD_SIZE)
+                                     for j in range(Player.FIELD_SIZE)]}
+        self.enemy_hp = {'w': 3, 'c': 2, 's': 1}
         self.have_attacked = False
         super().__init__(positions)
+
+    def attack_near_update(self, near_target, attack_point):
+        # nearに引っかかった場合多くとも8通りに絞られる
+        possible_point = [[attack_point[0]+i, attack_point[1]+j]
+                for i in range(-1, 2) for j in range(-1, 2) if not (i==0 and j==0)]
+        for enemy in near_target:
+            update_position = []
+            for point in possible_point:
+                if point in self.enemy_positions[enemy]:
+                    update_position.append(point)
+            self.enemy_positions[enemy] = update_position
 
     def update(self, json_):
         cond = json.loads(json_)
@@ -30,6 +47,14 @@ class PlayerByHand(Player):
         # 自分の攻撃のフィードバック
         if self.have_attacked:
             print("I have attacked enemy. the result are below.")
+            attack_point = cond['result']['attacked']['position']
+            if 'hit' in cond['result']['attacked']:
+                print("I hit the enemy")
+                is_attacked_enemy = cond['result']['attacked']['hit']
+                self.enemy_positions[is_attacked_enemy] = attack_point
+                self.enemy_hp[is_attacked_enemy] -= 1
+            if 'near' in cond['result']['attacked']:
+                self.attack_near_update(cond['result']['attacked']['near'], attack_point)
             self.have_attacked = False
         # 敵の行動のフィードバック
         elif 'result' in cond:
@@ -37,7 +62,9 @@ class PlayerByHand(Player):
                 print("I was attacked by enemy")
             if 'moved' in cond['result']:
                 print("enemy moving")
+        print(cond)
         super().update(json_)
+
     #
     # 移動か攻撃かランダムに決める．
     # どれがどこへ移動するか，あるいはどこに攻撃するかもランダム．
