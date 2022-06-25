@@ -32,15 +32,23 @@ class PlayerByHand(Player):
 
     # 攻撃してnearとなった場合の敵位置の更新
     def attack_near_update(self, near_target, attack_point):
-        # nearに引っかかった場合多くとも8通りに絞られる
         possible_point = [[attack_point[0]+i, attack_point[1]+j]
                 for i in range(-1, 2) for j in range(-1, 2) if not (i==0 and j==0)]
-        for enemy in near_target:
-            update_position = []
-            for point in possible_point:
-                if point in self.enemy_positions[enemy]:
-                    update_position.append(point)
-            self.enemy_positions[enemy] = update_position
+        for enemy in ['w', 'c', 's']:
+            # nearに引っかかった場合多くとも8通りに絞られる
+            if enemy in near_target:
+                update_position = []
+                for point in possible_point:
+                    if point in self.enemy_positions[enemy]:
+                        update_position.append(point)
+                self.enemy_positions[enemy] = update_position
+            # nearに引っかからなかった場合9か所除外できる
+            else:
+                update_position = []
+                for point in self.enemy_positions[enemy]:
+                    if point not in possible_point and point != attack_point:
+                        update_position.append(point)
+                self.enemy_positions[enemy] = update_position
 
     # # 敵からの攻撃による敵位置の更新
     # def enemy_attack_update(self, attack_point):
@@ -53,6 +61,8 @@ class PlayerByHand(Player):
     #                 update_position.append(point)
     #         self.enemy_positions[enemy] = update_position
 
+    # 敵が移動した場合
+    # 元々考えられていた候補の中でありうるものだけを更新する
     def enemy_movement_update(self, move_enemy, direction):
         update_position = []
         for point in self.enemy_positions[move_enemy]:
