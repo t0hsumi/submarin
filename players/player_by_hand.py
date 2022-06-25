@@ -20,13 +20,17 @@ class PlayerByHand(Player):
 
         # 初期配置は広い範囲を攻撃できる場所に変更する。
         positions = {'w': [1,1], 'c': [3,2], 's': [1,3]}
+
+        # 敵の候補地点として考えられるもの全て
         self.enemy_positions = {'w':[[i, j] for i in range(Player.FIELD_SIZE)
                                      for j in range(Player.FIELD_SIZE)],
                                 'c':[[i, j] for i in range(Player.FIELD_SIZE)
                                      for j in range(Player.FIELD_SIZE)],
                                 's':[[i, j] for i in range(Player.FIELD_SIZE)
                                      for j in range(Player.FIELD_SIZE)]}
+        # 敵の現在のHP
         self.enemy_hp = {'w': 3, 'c': 2, 's': 1}
+        # feedbackが自分のした攻撃によるものであるかどうか
         self.have_attacked = False
         super().__init__(positions)
 
@@ -62,7 +66,7 @@ class PlayerByHand(Player):
     #         self.enemy_positions[enemy] = update_position
 
     # 敵が移動した場合
-    # 元々考えられていた候補の中でありうるものだけを更新する
+    # 元々考えられていた候補の中を更新し、あり得ないものを除外する
     def enemy_movement_update(self, move_enemy, direction):
         update_position = []
         for point in self.enemy_positions[move_enemy]:
