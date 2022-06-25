@@ -39,14 +39,19 @@ class PlayerByHand(Player):
         possible_point = [[attack_point[0]+i, attack_point[1]+j]
                 for i in range(-1, 2) for j in range(-1, 2) if not (i==0 and j==0)]
         for enemy in ['w', 'c', 's']:
+            # もう候補が一つの場合は絞る必要なし
+            # これは、hitし、かつ、nearが存在する場合のコンフリクトを避けている
+            if len(self.enemy_positions[enemy]) == 1:
+                continue
             # nearに引っかかった場合多くとも8通りに絞られる
-            if enemy in near_target:
+            elif enemy in near_target:
                 update_position = []
                 for point in possible_point:
                     if point in self.enemy_positions[enemy]:
                         update_position.append(point)
                 self.enemy_positions[enemy] = update_position
             # nearに引っかからなかった場合9か所除外できる
+            # hitしていなければ
             else:
                 update_position = []
                 for point in self.enemy_positions[enemy]:
@@ -89,6 +94,7 @@ class PlayerByHand(Player):
             if 'near' in cond['result']['attacked']:
                 self.attack_near_update(cond['result']['attacked']['near'], attack_point)
             self.have_attacked = False
+
         # 敵の行動のフィードバック
         elif 'result' in cond:
             if 'attacked' in cond['result']:
@@ -101,27 +107,19 @@ class PlayerByHand(Player):
         super().update(json_)
 
     #
-    # 移動か攻撃かランダムに決める．
-    # どれがどこへ移動するか，あるいはどこに攻撃するかもランダム．
+    # 可能性があるうち最も小さいものをさらに絞っていく。
     #
     def action(self):
-        act = random.choice(["move", "attack"])
-
-        if act == "move":
-            ship = random.choice(list(self.ships.values()))
-            to = random.choice(self.field)
-            while not ship.can_reach(to) or not self.overlap(to) is None:
-                to = random.choice(self.field)
-
-            return json.dumps(self.move(ship.type, to))
-        elif act == "attack":
-            to = random.choice(self.field)
-            self.have_attacked = True
+        possibilities = {w:len(self.enemy_positions[w]) for w in ['w', 'c', 's']}
+        possibilities = sorted(possibilities.items(), key=lambda x:x[1])
+        for key, value in possibilities:
+            if self.enemy_hp[key]==0:
+                continue
+            to = random.choice(self.enemy_positions[key])
             while not self.can_attack(to):
-                to = random.choice(self.field)
-
+                to = random.choice(self.enemy_positions[key])
+            self.have_attacked = True
             return json.dumps(self.attack(to))
-
 
 # 仕様に従ってサーバとソケット通信を行う．
 def main(host, port, seed=0):
