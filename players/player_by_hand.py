@@ -41,6 +41,16 @@ class PlayerByHand(Player):
                     update_position.append(point)
             self.enemy_positions[enemy] = update_position
 
+    def enemy_attack_update(self, attack_point):
+        possible_point = [[attack_point[0]+i, attack_point[1]+j]
+                for i in range(-1, 2) for j in range(-1, 2) if not (i==0 and j==0)]
+        for enemy in ['w', 'c', 's']:
+            update_position = []
+            for point in possible_point:
+                if point in self.enemy_positions[enemy]:
+                    update_position.append(point)
+            self.enemy_positions[enemy] = update_position
+
     def update(self, json_):
         cond = json.loads(json_)
 
@@ -59,7 +69,7 @@ class PlayerByHand(Player):
         # 敵の行動のフィードバック
         elif 'result' in cond:
             if 'attacked' in cond['result']:
-                print("I was attacked by enemy")
+                self.enemy_attack_update(cond['result']['attacked']['position'])
             if 'moved' in cond['result']:
                 print("enemy moving")
         print(cond)
