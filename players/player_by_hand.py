@@ -35,6 +35,8 @@ class PlayerByHand(Player):
         elif 'result' in cond:
             if 'attacked' in cond['result']:
                 print("I was attacked by enemy")
+            if 'moved' in cond['result']:
+                print("enemy moving")
         super().update(json_)
     #
     # 移動か攻撃かランダムに決める．
