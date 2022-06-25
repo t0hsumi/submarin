@@ -30,6 +30,7 @@ class PlayerByHand(Player):
         self.have_attacked = False
         super().__init__(positions)
 
+    # 攻撃してnearとなった場合の敵位置の更新
     def attack_near_update(self, near_target, attack_point):
         # nearに引っかかった場合多くとも8通りに絞られる
         possible_point = [[attack_point[0]+i, attack_point[1]+j]
@@ -41,27 +42,35 @@ class PlayerByHand(Player):
                     update_position.append(point)
             self.enemy_positions[enemy] = update_position
 
-    def enemy_attack_update(self, attack_point):
-        possible_point = [[attack_point[0]+i, attack_point[1]+j]
-                for i in range(-1, 2) for j in range(-1, 2) if not (i==0 and j==0)]
-        for enemy in ['w', 'c', 's']:
-            update_position = []
-            for point in possible_point:
-                if point in self.enemy_positions[enemy]:
-                    update_position.append(point)
-            self.enemy_positions[enemy] = update_position
+    # # 敵からの攻撃による敵位置の更新
+    # def enemy_attack_update(self, attack_point):
+    #     possible_point = [[attack_point[0]+i, attack_point[1]+j]
+    #             for i in range(-1, 2) for j in range(-1, 2) if not (i==0 and j==0)]
+    #     for enemy in ['w', 'c', 's']:
+    #         update_position = []
+    #         for point in possible_point:
+    #             if point in self.enemy_positions[enemy]:
+    #                 update_position.append(point)
+    #         self.enemy_positions[enemy] = update_position
+
+    def enemy_movement_update(self, move_enemy, direction):
+        update_position = []
+        for point in self.enemy_positions[move_enemy]:
+            move_to = [pos + direc for (pos, direc) in zip(point, direction)]
+            if move_to[0] < super().FIELD_SIZE and move_to[1] < super().FIELD_SIZE \
+                    and move_to[0] >= 0 and move_to[1] >= 0:
+                update_position.append(move_to)
+        self.enemy_positions[move_enemy] = update_position
 
     def update(self, json_):
         cond = json.loads(json_)
 
         # 自分の攻撃のフィードバック
         if self.have_attacked:
-            print("I have attacked enemy. the result are below.")
             attack_point = cond['result']['attacked']['position']
             if 'hit' in cond['result']['attacked']:
-                print("I hit the enemy")
                 is_attacked_enemy = cond['result']['attacked']['hit']
-                self.enemy_positions[is_attacked_enemy] = attack_point
+                self.enemy_positions[is_attacked_enemy] = [attack_point]
                 self.enemy_hp[is_attacked_enemy] -= 1
             if 'near' in cond['result']['attacked']:
                 self.attack_near_update(cond['result']['attacked']['near'], attack_point)
@@ -69,9 +78,11 @@ class PlayerByHand(Player):
         # 敵の行動のフィードバック
         elif 'result' in cond:
             if 'attacked' in cond['result']:
-                self.enemy_attack_update(cond['result']['attacked']['position'])
+                # self.enemy_attack_update(cond['result']['attacked']['position'])
+                print("I was attacked")
             if 'moved' in cond['result']:
-                print("enemy moving")
+                self.enemy_movement_update(cond['result']['moved']['ship'],
+                                           cond['result']['moved']['distance'])
         print(cond)
         super().update(json_)
 
