@@ -68,7 +68,7 @@ class PlayerByHand(Player):
             for point in self.enemy_positions[enemy]:
                 if point in possible_point:
                     update_position.append(point)
-            update_position += self.enemy_positions[enemy]
+            self.enemy_positions[enemy] += update_position
 
     # 敵が移動した場合
     # 元々考えられていた候補の中を更新し、あり得ないものを除外する
