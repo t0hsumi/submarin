@@ -81,20 +81,27 @@ class PlayerByHand(Player):
                 update_position.append(move_to)
         self.enemy_positions[move_enemy] = update_position
 
+    # 自分が攻撃した場合のフィードバック
+    def my_attack_update(self, cond):
+        attack_point = cond['result']['attacked']['position']
+        # 自分の攻撃が当たった場合
+        if 'hit' in cond['result']['attacked']:
+            is_attacked_enemy = cond['result']['attacked']['hit']
+            self.enemy_positions[is_attacked_enemy] = [attack_point]
+            self.enemy_hp[is_attacked_enemy] -= 1
+
+        # 自分の攻撃箇所の近くに敵がいた場合
+        if 'near' in cond['result']['attacked']:
+            self.attack_near_update(cond['result']['attacked']['near'], attack_point)
+        self.have_attacked = False
+
     # json形式で与えられたfeedbackを反映する
     def update(self, json_):
         cond = json.loads(json_)
 
         # 自分の攻撃のフィードバック
         if self.have_attacked:
-            attack_point = cond['result']['attacked']['position']
-            if 'hit' in cond['result']['attacked']:
-                is_attacked_enemy = cond['result']['attacked']['hit']
-                self.enemy_positions[is_attacked_enemy] = [attack_point]
-                self.enemy_hp[is_attacked_enemy] -= 1
-            if 'near' in cond['result']['attacked']:
-                self.attack_near_update(cond['result']['attacked']['near'], attack_point)
-            self.have_attacked = False
+            self.my_attack_update(cond)
 
         # 敵の行動のフィードバック
         elif 'result' in cond:
@@ -125,7 +132,7 @@ class PlayerByHand(Player):
                 self.have_attacked = True
                 return json.dumps(self.attack(to))
         to = random.choice(self.field)
-        while not self.can_attac(to):
+        while not self.can_attack(to):
             to = random.choice(self.field)
         return json.dumps(self.attack(to))
 
