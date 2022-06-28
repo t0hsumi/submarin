@@ -116,9 +116,16 @@ class PlayerByHand(Player):
 
     def attack_to_random_point(self):
         to = random.choice(self.field)
-        while not self.can_attack(to):
+        while not super().can_attack(to):
             to = random.choice(self.field)
         return json.dumps(self.attack(to))
+
+    # ある敵に攻撃可能かどうか調べる関数
+    def is_in_range(self, enemy):
+        for point in self.enemy_positions[enemy]:
+            if super().can_attack(point):
+                return True
+        return False
 
     #
     # 可能性があるうち最も小さいものをさらに絞っていく。
@@ -127,20 +134,18 @@ class PlayerByHand(Player):
         # 敵とその敵が存在しうる場所の数をpossibilitiesに入れる。
         possibilities = {w:len(self.enemy_positions[w]) for w in ['w', 'c', 's']}
         possibilities = sorted(possibilities.items(), key=lambda x:x[1])
+        attack_order = [w[0] for w in possibilities]
 
-        for key, value in possibilities:
+        for enemy in attack_order:
             # 敵が死んでいる場合はその敵は無視
-            if self.enemy_hp[key]==0:
+            if self.enemy_hp[enemy]==0:
                 continue
 
-            can_attack = False
-            for point in self.enemy_positions[key]:
-                if point not in [[x, y] for x in [3,4] for y in [0, 4]]:
-                    can_attack = True
-            if can_attack:
-                to = random.choice(self.enemy_positions[key])
-                while not self.can_attack(to):
-                    to = random.choice(self.enemy_positions[key])
+            # 敵候補地が攻撃可能ならば、攻撃する
+            if self.is_in_range(enemy):
+                to = random.choice(self.enemy_positions[enemy])
+                while not super().can_attack(to):
+                    to = random.choice(self.enemy_positions[enemy])
                 self.have_attacked = True
                 return json.dumps(self.attack(to))
         return self.attack_to_random_point()
