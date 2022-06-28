@@ -30,6 +30,7 @@ class PlayerByHand(Player):
                                      for j in range(Player.FIELD_SIZE)]}
         # 敵の現在のHP
         self.enemy_hp = {'w': 3, 'c': 2, 's': 1}
+
         # feedbackが自分のした攻撃によるものであるかどうか
         self.have_attacked = False
         super().__init__(positions)
@@ -43,6 +44,7 @@ class PlayerByHand(Player):
             # これは、hitし、かつ、nearが存在する場合のコンフリクトを避けている
             if len(self.enemy_positions[enemy]) == 1:
                 continue
+
             # nearに引っかかった場合多くとも8通りに絞られる
             elif enemy in near_target:
                 update_position = []
@@ -50,8 +52,8 @@ class PlayerByHand(Player):
                     if point in self.enemy_positions[enemy]:
                         update_position.append(point)
                 self.enemy_positions[enemy] = update_position
-            # nearに引っかからなかった場合9か所除外できる
-            # hitしていなければ
+
+            # hitもせずnearに引っかからなかった場合9か所除外できる
             else:
                 update_position = []
                 for point in self.enemy_positions[enemy]:
@@ -112,29 +114,36 @@ class PlayerByHand(Player):
                                            cond['result']['moved']['distance'])
         super().update(json_)
 
+    def attack_to_random_point(self):
+        to = random.choice(self.field)
+        while not self.can_attack(to):
+            to = random.choice(self.field)
+        return json.dumps(self.attack(to))
+
     #
     # 可能性があるうち最も小さいものをさらに絞っていく。
     #
     def action(self):
+        # 敵とその敵が存在しうる場所の数をpossibilitiesに入れる。
         possibilities = {w:len(self.enemy_positions[w]) for w in ['w', 'c', 's']}
         possibilities = sorted(possibilities.items(), key=lambda x:x[1])
+
         for key, value in possibilities:
+            # 敵が死んでいる場合はその敵は無視
             if self.enemy_hp[key]==0:
                 continue
-            can_attacked = False
+
+            can_attack = False
             for point in self.enemy_positions[key]:
                 if point not in [[x, y] for x in [3,4] for y in [0, 4]]:
-                    can_attacked = True
-            if can_attacked:
+                    can_attack = True
+            if can_attack:
                 to = random.choice(self.enemy_positions[key])
                 while not self.can_attack(to):
                     to = random.choice(self.enemy_positions[key])
                 self.have_attacked = True
                 return json.dumps(self.attack(to))
-        to = random.choice(self.field)
-        while not self.can_attack(to):
-            to = random.choice(self.field)
-        return json.dumps(self.attack(to))
+        return self.attack_to_random_point()
 
 # 仕様に従ってサーバとソケット通信を行う．
 def main(host, port, seed=0):
