@@ -14,6 +14,9 @@ class PlayerByHand(Player):
     def __init__(self, seed=0):
         random.seed(seed)
 
+        # 初期のフィールドを配列として持っておく
+        self.field = [[i, j] for i in range(Player.FIELD_SIZE)
+                             for j in range(Player.FIELD_SIZE)]
 
         # 初期配置は広い範囲を攻撃できる場所に変更する。
         positions = {'w': [1,1], 'c': [3,2], 's': [1,3]}
@@ -120,6 +123,13 @@ class PlayerByHand(Player):
             to = random.choice(field)
         return json.dumps(self.attack(to))
 
+    def attack_in_field(self, field):
+        to = random.choice(field)
+        while not super().can_attack(to):
+            to = random.choice(field)
+        self.have_attacked = True
+        return json.dumps(self.attack(to))
+
     # ある敵に攻撃可能かどうか調べる関数
     def is_in_range(self, enemy):
         for point in self.enemy_positions[enemy]:
@@ -145,13 +155,9 @@ class PlayerByHand(Player):
 
             # 敵候補地が攻撃可能ならば、攻撃する
             if self.is_in_range(enemy):
-                to = random.choice(self.enemy_positions[enemy])
-                while not super().can_attack(to):
-                    to = random.choice(self.enemy_positions[enemy])
-                self.have_attacked = True
-                return json.dumps(self.attack(to))
+                return self.attack_in_field(self.enemy_positions[enemy])
         # 敵候補地が攻撃できない場合適当な場所を攻撃する.
-        return self.attack_to_random_point()
+        return self.attack_in_field(self.field)
 
 # 仕様に従ってサーバとソケット通信を行う．
 def main(host, port, seed=0):
