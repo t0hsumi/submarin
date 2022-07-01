@@ -28,7 +28,7 @@ class PlayerByHand(Player):
         self.enemy_hp = {'w': 3, 'c': 2, 's': 1}
 
         # feedbackが自分のした攻撃によるものであるかどうか
-        self.have_attacked = False
+        self.attacked = False
         super().__init__(positions)
 
     # 攻撃してnearとなった場合の敵位置の更新
@@ -91,14 +91,14 @@ class PlayerByHand(Player):
         # 自分の攻撃箇所の近くに敵がいた場合
         if 'near' in cond['result']['attacked']:
             self.attack_near_update(cond['result']['attacked']['near'], attack_point)
-        self.have_attacked = False
+        self.attacked = False
 
     # json形式で与えられたfeedbackを反映する
     def update(self, json_):
         cond = json.loads(json_)
 
         # 自分の攻撃のフィードバック
-        if self.have_attacked:
+        if self.attacked :
             self.my_attack_update(cond)
 
         # 敵の行動のフィードバック
@@ -115,7 +115,7 @@ class PlayerByHand(Player):
         to = random.choice(field)
         while not super().can_attack(to):
             to = random.choice(field)
-        self.have_attacked = True
+        self.attacked = True
         return json.dumps(self.attack(to))
 
     # ある敵に攻撃可能かどうか調べる関数
