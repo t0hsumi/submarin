@@ -110,15 +110,6 @@ class PlayerByHand(Player):
                                            cond['result']['moved']['distance'])
         super().update(json_)
 
-    def attack_to_random_point(self):
-        # フィールドを2x2の配列として持っている．
-        field = [[i, j] for i in range(Player.FIELD_SIZE)
-                        for j in range(Player.FIELD_SIZE)]
-        to = random.choice(field)
-        while not super().can_attack(to):
-            to = random.choice(field)
-        return json.dumps(self.attack(to))
-
     def attack_in_field(self, field=[[i, j] for i in range(Player.FIELD_SIZE)
                                             for j in range(Player.FIELD_SIZE)]):
         to = random.choice(field)
